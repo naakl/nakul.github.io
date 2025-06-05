@@ -1,0 +1,279 @@
+
+@font-face {
+  font-family: 'Apple Garamond';
+  src: url('typo/apple_garamond/appleGaramond-light.woff2') format('woff2'),
+       url('typo/apple_garamond/appleGaramond-light.woff') format('woff'),
+       url('typo/apple_garamond/appleGaramond-light.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* Optional, improves loading behavior */
+}
+
+/* Akira Expanded font */
+@font-face {
+  font-family: 'Akira Expanded';
+  src: url('typo/akira_expanded/Akira Expanded.woff2') format('woff2');
+  font-weight: normal; /* Add this for consistency */
+  font-style: normal;  /* Add this for consistency */
+  font-display: swap;  /* Optional, improves user experience */
+}
+
+
+
+
+body {
+  font-family: 'Apple Garamond', sans-serif;
+  margin: 0;
+  position: relative;
+  width: 1440px;
+  height: 2850px;
+  background: linear-gradient(to bottom, #C4A5FF, #FFF3A8, #6E6E6E 91%);
+  overflow-x: hidden;
+}
+
+/* Navigation Bar */
+nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 40px 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: black;
+  z-index: 100;
+}
+
+nav .menu-left {
+  display: flex;
+  gap: 64px;
+  font-size: 35px;
+  font-weight: 400;
+}
+
+nav .menu-right {
+  font-size: 35px;
+  font-weight: 400;
+}
+
+nav a {
+  color: black;
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
+}
+
+nav a:hover {
+  color: #4a5568;
+}
+
+/* Main Quote + Image */
+.content-area {
+  position: absolute;
+  top: 150px;
+  left: 320px;
+  max-width: calc(1440px - 480px - 50px);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  z-index: 20;
+}
+
+.content-area img {
+  width: 530px;
+  height: 759px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.content-area h1 {
+  font-family: 'Apple Garamond', serif;
+  font-size: 7em;
+  color: black;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  text-align: left;
+  flex-grow: 1;
+  quotes: none;
+}
+
+.content-area h1::before,
+.content-area h1::after {
+  content: none;
+}
+
+/* Eye Styles */
+.eye-sclera {
+  position: absolute;
+  background-color: white;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  width: 2.3%;
+  height: 0.8%;
+  z-index: 30;
+}
+
+.eye-pupil {
+  position: absolute;
+  background-color: black;
+  border-radius: 50%;
+  transition: transform 0.1s ease-out;
+  width: 50%;
+  height: 50%;
+}
+
+/* Gallery Section */
+main {
+  width: 100%;
+  max-width: 2500px;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: absolute;
+  top: 950px;
+  left: 80px;
+  cursor: grab;
+  perspective: 950px;
+  perspective-origin: center center;
+  z-index: 1;
+}
+
+.gallery-grid {
+  display: flex;
+  overflow-x: hidden;
+  gap: 4rem;
+  white-space: nowrap;
+  padding-bottom: 5rem;
+  user-select: none;
+  transform-style: preserve-3d;
+}
+
+.image-card {
+  flex-shrink: 0;
+  width: 500px;
+  height: 500px;
+  background-color: #ffffff;
+  border-radius: 0;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08), 0 2px 5px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: transform 0.2s ease-out, z-index 0.2s ease-out, filter 0.2s ease-out;
+  backface-visibility: hidden;
+  position: relative;
+}
+
+.image-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+  pointer-events: none;
+}
+
+.image-title {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+  color: white;
+  padding: 1.2rem 0.5rem;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+  pointer-events: none;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* About Nakul Section */
+.about-nakul {
+
+  padding: 20px;
+  
+  position: absolute;
+  top:1600px;
+  width: calc(100%);
+  left: 40px;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+.about-nakul h1 {
+  font-size: 6.6em;
+  margin-bottom: 80px;
+  margin-top: 80px;
+  color: #000;
+}
+
+.about-nakul p {
+  font-size: 4em;
+  line-height: 1;
+  max-width: 2000px;
+  margin: 0 auto;
+}
+
+
+
+.about-nakul a {
+   font-size: 2em;
+  text-align: right;
+   position: relative;
+   left:960px;
+   top:210px;
+   margin: 60px;
+  color: white;
+  text-decoration: none;
+}
+
+
+
+
+.footer {
+  padding: 0px;
+  
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  width: 110%; /* No need for calc here */
+     
+  overflow: hidden;  
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+.footer h1 {
+  font-family: 'Akira Expanded', sans-serif; /* Capitalization must match @font-face exactly */
+  font-size: 19em;
+  margin-bottom: -40px;
+  line-height: .85;
+  margin-top: -50px;
+  color: white;
+}
+
+
+.footer h2 {
+  font-family: 'Akira Expanded', sans-serif; /* Capitalization must match @font-face exactly */
+  font-size: 19em;
+  margin-bottom: -40px;
+  text-align: right;
+  line-height: .88;
+   position: relative;
+   left: -30px;
+  margin-top: -50px;
+  color: white;
+}
+
+
+
+
+
+
+
+

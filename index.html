@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naakl</title>
+    <style>
+        @font-face {
+            font-family: 'Apple Garamond';
+            src: url('typo/apple_garamond/appleGaramond-light.woff2') format('woff2'),
+                 url('typo/apple_garamond/appleGaramond-light.woff') format('woff'),
+                 url('typo/apple_garamond/appleGaramond-light.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap; /* Optional, improves loading behavior */
+        }
+
+        /* Akira Expanded font */
+        @font-face {
+            font-family: 'Akira Expanded';
+            src: url('typo/akira_expanded/Akira Expanded.woff2') format('woff2');
+            font-weight: normal; /* Add this for consistency */
+            font-style: normal;  /* Add this for consistency */
+            font-display: swap;  /* Optional, improves user experience */
+        }
+
+        body {
+            font-family: 'Apple Garamond', sans-serif;
+            margin: 0;
+            position: relative;
+            width: 1440px; /* Fixed width, consider making this responsive */
+            height: 2850px; /* Fixed height, consider making this responsive */
+            background: linear-gradient(to bottom, #C4A5FF, #FFF3A8, #6E6E6E 91%);
+            overflow-x: hidden;
+        }
+
+        /* Navigation Bar */
+        nav {
+            position: fixed; /* Changed to fixed to stick to viewport */
+            top: 0;
+            left: 0;
+            width: 92%;
+            padding: 40px 64px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: black;
+            z-index: 100;
+            transition: transform 0.3s ease-out; /* Added for smooth slide effect */
+        }
+
+        /* Class to hide the navigation bar */
+        nav.nav-hidden {
+            transform: translateY(-100%); /* Hides the nav by moving it up */
+        }
+
+        nav .menu-left {
+            display: flex;
+            gap: 64px;
+            font-size: 35px;
+            font-weight: 400;
+        }
+
+        nav .menu-right {
+
+            display: flex;
+            font-size: 35px;
+            font-weight: 400;
+        }
+
+        nav a {
+            color: black;
+            text-decoration: none;
+            transition: color 0.2s ease-in-out;
+        }
+
+        nav a:hover {
+            color: white;
+        }
+
+        /* Main Quote + Image */
+        .content-area {
+            position: absolute;
+            top: 150px;
+            left: 320px;
+            max-width: calc(1440px - 480px - 50px);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            z-index: 20;
+        }
+
+        .content-area img {
+            width: 530px;
+            height: 759px;
+            display: block;
+            flex-shrink: 0;
+        }
+
+        .content-area h1 {
+            font-family: 'Apple Garamond', serif;
+            font-size: 7em;
+            color: black;
+            margin: 0;
+            padding: 0;
+            line-height: 1;
+            text-align: left;
+            flex-grow: 1;
+            quotes: none;
+        }
+
+        .content-area h1::before,
+        .content-area h1::after {
+            content: none;
+        }
+
+        /* Eye Styles */
+        .eye-sclera {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            width: 2.3%;
+            height: 0.8%;
+            z-index: 30;
+        }
+
+        .eye-pupil {
+            position: absolute;
+            background-color: black;
+            border-radius: 50%;
+            transition: transform 0.1s ease-out;
+            width: 50%;
+            height: 50%;
+        }
+
+        /* Gallery Section */
+        main {
+            width: 100%;
+            max-width: 2500px;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            overflow: hidden;
+            position: absolute;
+            top: 950px;
+            left: 80px;
+            cursor: grab;
+            perspective: 950px;
+            perspective-origin: center center;
+            z-index: 1;
+        }
+
+        .gallery-grid {
+            display: flex;
+            overflow-x: hidden;
+            gap: 4rem;
+            white-space: nowrap;
+            padding-bottom: 5rem;
+            user-select: none;
+            transform-style: preserve-3d;
+        }
+
+        .image-card {
+            flex-shrink: 0;
+            width: 500px;
+            height: 500px;
+            background-color: #ffffff;
+            border-radius: 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08), 0 2px 5px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: transform 0.2s ease-out, z-index 0.2s ease-out, filter 0.2s ease-out;
+            backface-visibility: hidden;
+            position: relative;
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 0;
+            pointer-events: none;
+        }
+
+        .image-title {
+            position: absolute;
+            bottom: -60px;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 1)30%, rgba(0, 0, 0, 0));
+            color: white;
+            padding: 7rem 0.5rem;
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+            pointer-events: none;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        /* About Nakul Section */
+        .about-nakul {
+            padding: 20px;
+            position: absolute;
+            top:1600px;
+            width: calc(100%);
+            left: 40px;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+
+        .about-nakul h1 {
+            font-size: 6.6em;
+            margin-bottom: 80px;
+            margin-top: 80px;
+            color: #000;
+        }
+
+        .about-nakul p {
+            font-size: 4em;
+            line-height: 1;
+            max-width: 2000px;
+            margin: 0 auto;
+        }
+
+        .about-nakul a {
+            font-size: 2em;
+            text-align: right;
+            position: relative;
+            left:960px;
+            top:210px;
+            margin: 60px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .footer {
+            padding: 0px;
+            position: absolute;
+            left: 0px;
+            bottom: 0px;
+            width: 110%; /* No need for calc here */
+            overflow: hidden;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+
+        .footer h1 {
+            font-family: 'Akira Expanded', sans-serif; /* Capitalization must match @font-face exactly */
+            font-size: 19em;
+            margin-bottom: -40px;
+            line-height: .85;
+            margin-top: -50px;
+            color: white;
+        }
+
+        .footer h2 {
+            font-family: 'Akira Expanded', sans-serif; /* Capitalization must match @font-face exactly */
+            font-size: 19em;
+            margin-bottom: -40px;
+            text-align: right;
+            line-height: .88;
+            position: relative;
+            left: -30px;
+            margin-top: -50px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="menu-left">
+            <a href="#">Home</a>
+            <a href="https://www.instagram.com/pxls.3d/">Pixels</a>
+            <a href="#">Gallery</a>
+        </div>
+
+
+        <div class="menu-right">
+         <a href="https://www.instagram.com/naakul_/">Nakul Gopal</a>
+
+        </div>
+    </nav>
+
+    <div class="content-area">
+        <h1>Only Dead Fish </h1>
+        <img src="images/a.png" alt="the Mona Lisa." onerror="this.onerror=null;this.src='https://placehold.co/549x759/cccccc/333333?text=Image+Not+Found'">
+        <h1>go with flow. </h1>
+    </div>
+
+    <div id="mona-lisa-eyes-container">
+        <div id="left-eye-sclera" class="eye-sclera" style="top: 10.9%; left: 50.2%;">
+            <div id="left-eye-pupil" class="eye-pupil"></div>
+        </div>
+        <div id="right-eye-sclera" class="eye-sclera" style="top: 10.9%; left: 54.3%;">
+            <div id="right-eye-pupil" class="eye-pupil"></div>
+        </div>
+    </div>
+
+    <main id="galleryContainer">
+        <div class="gallery-grid">
+            <a href="projects/space time.html" class="image-card">
+                <img
+                    src="images/p1.png"
+                    alt="space time"
+                    onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/000000?text=Image+Load+Error';"
+                >
+                <div class="image-title">Coordinate Time</div>
+            </a>
+            <a href="https://naakl.neocities.org/since%20you%20were%20born" class="image-card">
+                <img
+                    src="https://naakl.neocities.org/images/portfolio/sywb.png"
+                    alt="Urban Landscape, a bustling city scene."
+                    onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/000000?text=Image+Load+Error';"
+                >
+                <div class="image-title">Since You Were Born</div>
+            </a>
+            <a href="https://naakl.neocities.org/dumb" class="image-card">
+                <img
+                    src="https://naakl.neocities.org/images/portfolio/dumbcage.png"
+                    alt="Abstract Geometry, a complex and intriguing design."
+                    onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/000000?text=Image+Load+Error';"
+                >
+                <div class="image-title">DumbCage</div>
+            </a>
+            <a href="projects/Voice Flappybird.html " class="image-card">
+                <img
+                    src="images/p2.png"
+                    alt="Wildlife Close-up, an intimate portrait of an animal."
+                    onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/000000?text=Image+Load+Error';"
+                >
+                <div class="image-title">Voice Flappybird</div>
+            </a>
+            <a href="https://naakl.neocities.org/pixels" class="image-card">
+                <img
+                    src="images/p3.png"
+                    alt=""
+                    onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/000000?text=Image+Load+Error';"
+                >
+                <div class="image-title">Pixels</div>
+            </a>
+            <a href="https://naakl.neocities.org/shalor" class="image-card">
+                <img
+                    src="images/p4.png"
+                    alt=""
+                    onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/000000?text=Image+Load+Error';"
+                >
+                <div class="image-title">Reaction Test</div>
+            </a>
+            <a href="projects/bingballs.html" class="image-card">
+                <img
+                    src="images/p5.png"
+                    alt="bingballs"
+                    onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/000000?text=Image+Load+Error';"
+                >
+                <div class="image-title">BingBalls</div>
+            </a>
+            <a href="projects/moon.html" class="image-card">
+                <img
+                    src="images/p6.png"
+                    alt="moon"
+                    onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/000000?text=Image+Load+Error';"
+                >
+                <div class="image-title">Lunar Lander</div>
+            </a>
+        </div>
+    </main>
+
+    <div class="about-nakul">
+        <h1>Hey, I'm Nakul</h1>
+        <p>While the purpose of this website might not be immediately obvious, much like your uneventful life, I'm excited to share my creations. I'm particularly passionate about Blender, CAD design, and a bit of programming.</p>
+
+
+        <a href="https://www.instagram.com/naakul_/">Instagram</a>
+        <a href="https://www.linkedin.com/in/nakul-gopal-072887275/" >LinkedIn</a>
+    </div>
+
+
+    <footer class="footer">
+        <h1>Nakul</h1>
+        <h2>gopal</h2>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Eye Tracking Logic
+            const leftEyePupil = document.getElementById('left-eye-pupil');
+            const rightEyePupil = document.getElementById('right-eye-pupil');
+            const leftEyeSclera = document.getElementById('left-eye-sclera');
+            const rightEyeSclera = document.getElementById('right-eye-sclera');
+
+            /**
+             * Calculates the CSS transform for a pupil to follow the mouse.
+             * @param {HTMLElement} scleraElement - The DOM element representing the eye's sclera.
+             * @param {number} mouseX - The current X coordinate of the mouse.
+             * @param {number} mouseY - The current Y coordinate of the mouse.
+             * @returns {string} The CSS `translate` string (e.g., 'translate(10px, 5px)').
+             */
+            function calculatePupilTransform(scleraElement, mouseX, mouseY) {
+                const scleraRect = scleraElement.getBoundingClientRect();
+                const scleraCenterX = scleraRect.left + scleraRect.width / 2;
+                const scleraCenterY = scleraRect.top + scleraRect.height / 2;
+
+                const dx = mouseX - scleraCenterX;
+                const dy = mouseY - scleraCenterY;
+
+                const angle = Math.atan2(dy, dx);
+                // Define the maximum movement range for the pupil within the sclera
+                const pupilMaxMove = (scleraRect.width / 2) * 0.6;
+
+                const pupilX = pupilMaxMove * Math.cos(angle);
+                const pupilY = pupilMaxMove * Math.sin(angle);
+
+                return `translate(${pupilX}px, ${pupilY}px)`;
+            }
+
+            /**
+             * Updates the position of both pupils based on the mouse event.
+             * @param {MouseEvent} event - The mouse event object.
+             */
+            function updatePupilPosition(event) {
+                leftEyePupil.style.transform = calculatePupilTransform(leftEyeSclera, event.clientX, event.clientY);
+                rightEyePupil.style.transform = calculatePupilTransform(rightEyeSclera, event.clientX, event.clientY);
+            }
+
+            // Attach the mousemove listener to the document to track pupil movement
+            document.addEventListener('mousemove', updatePupilPosition);
+
+            // Initial positioning: Center pupils when the page loads before any mouse movement occurs
+            leftEyePupil.style.transform = 'translate(0, 0)';
+            rightEyePupil.style.transform = 'translate(0, 0)';
+
+            // Image Gallery Logic
+            const galleryContainer = document.getElementById('galleryContainer');
+            const galleryGrid = document.querySelector('.gallery-grid');
+
+            let isDragging = false; // Flag to indicate if the gallery is being dragged
+            let startX; // Initial mouse X position when drag starts
+            let scrollLeftStart; // Initial scroll position when drag starts
+            let currentVelocity = 0; // Current scrolling velocity for inertia effect
+            let animationFrameId = null; // Stores the requestAnimationFrame ID for the main animation loop
+            let lastMouseX = 0; // Used to calculate mouse velocity for inertia
+            let lastTime = 0; // Used to calculate time difference for velocity
+
+            let hoverScrollSpeed = 8; // Pixels per frame for scrolling when hovering near edges
+            let hoverDirection = 0; // -1 for left, 1 for right, 0 for no hover scroll
+
+            // Duplicate images to create a seamless looping effect for the gallery
+            const originalImages = Array.from(galleryGrid.children);
+            originalImages.forEach(image => {
+                galleryGrid.appendChild(image.cloneNode(true));
+            });
+
+            let originalContentWidth = 0; // Stores the total width of the original set of images
+
+            /**
+             * Calculates the total width of the original gallery content and applies initial visual transforms.
+             */
+            function calculateAndApplyTransforms() {
+                const firstImageCard = originalImages[0];
+                if (!firstImageCard) return; // Exit if no image cards exist
+
+                const computedCardStyle = getComputedStyle(firstImageCard);
+                const imageCardWidth = parseFloat(computedCardStyle.width);
+                const computedGridStyle = getComputedStyle(galleryGrid);
+                // Get the gap between grid items, defaulting to 0 if not found
+                const gap = parseFloat(computedGridStyle.gap || computedGridStyle.columnGap) || 0;
+
+                // Calculate the total width of the original content including gaps
+                originalContentWidth = (imageCardWidth + gap) * originalImages.length;
+                // Subtract the last gap as it's not part of the total content width for seamless looping
+                originalContentWidth -= gap;
+
+                applyVisualTransforms(); // Apply transforms immediately after recalculating dimensions
+            }
+
+            /**
+             * Applies 3D-like visual transformations (scale, translateZ, blur, z-index, title opacity)
+             * to image cards based on their proximity to the center of the visible gallery.
+             */
+            function applyVisualTransforms() {
+                const containerRect = galleryContainer.getBoundingClientRect();
+                const containerCenter = containerRect.width / 2; // Center of the visible container
+
+                const allImageCards = galleryGrid.querySelectorAll('.image-card');
+                const scrollOffset = galleryGrid.scrollLeft; // Current scroll position of the grid
+
+                allImageCards.forEach(card => {
+                    // Calculate the center of the card relative to the galleryGrid's *scrollable content*
+                    const cardCenterInScroll = card.offsetLeft + card.offsetWidth / 2;
+
+                    // Calculate the distance from the *visible center of the container*
+                    const distanceToCenter = Math.abs((cardCenterInScroll - scrollOffset) - containerCenter);
+
+                    // Normalize distance to a 0-1 range (0 at center, 1 at max effective distance)
+                    // The normalization factor extends beyond the container width to create a smoother falloff
+                    const normalizationFactor = containerRect.width / 2 + card.offsetWidth;
+                    const normalizedDistance = Math.min(1, distanceToCenter / normalizationFactor);
+
+                    // Apply scale: larger at center (1.15), smaller at edges (down to 0.9)
+                    const scaleFactor = 1.15 - (normalizedDistance * 0.25);
+                    // Apply translateZ: closer at center (0px), further back at edges (up to -100px)
+                    const translateZValue = -normalizedDistance * 100;
+
+                    // Apply blur: 0px at center, up to 2px at edges for a subtle effect
+                    const blurValue = normalizedDistance * 2;
+
+                    // Apply z-index: higher for closer images, lower for further images to manage overlap
+                    const zIndexValue = Math.round(100 - (normalizedDistance * 100));
+
+                    // Get the title element for this card
+                    const titleElement = card.querySelector('.image-title');
+                    if (titleElement) {
+                        // Calculate title opacity: 1 at center, 0 at edges.
+                        // Multiplier of 3 for normalizedDistance makes it fade out completely faster.
+                        const titleOpacity = Math.max(0, 1 - (normalizedDistance * 3));
+                        titleElement.style.opacity = titleOpacity;
+                    }
+
+                    // Apply the calculated transforms and filters to the card
+                    card.style.transform = `scale(${scaleFactor}) translateZ(${translateZValue}px)`;
+                    card.style.filter = `blur(${blurValue}px)`;
+                    card.style.zIndex = zIndexValue;
+                });
+            }
+
+            /**
+             * The main animation loop that handles all scrolling (drag, inertia, hover) and visual updates.
+             */
+            function animateLoop() {
+                if (isDragging) {
+                    // Dragging logic is handled directly in mousemove/touchmove,
+                    // this ensures the loop continues for visual transforms during drag.
+                } else if (currentVelocity !== 0) {
+                    // Inertia logic: apply friction to gradually slow down scrolling
+                    currentVelocity *= 0.995; // Very slight friction
+
+                    // Stop inertia if velocity is very low
+                    if (Math.abs(currentVelocity) < 0.1) {
+                        currentVelocity = 0;
+                    }
+                    galleryGrid.scrollLeft -= currentVelocity;
+                } else if (hoverDirection !== 0) {
+                    // Hover scrolling logic: scroll based on hover direction and speed
+                    galleryGrid.scrollLeft += hoverDirection * hoverScrollSpeed;
+                }
+
+                // Implement continuous looping for all scroll types
+                // If scrolled past the original content, jump back to the start of the original content
+                if (galleryGrid.scrollLeft >= originalContentWidth) {
+                    galleryGrid.scrollLeft = 0;
+                }
+                // If scrolled before the start of the original content, jump to the start of the duplicated content
+                else if (galleryGrid.scrollLeft <= 0) {
+                    galleryGrid.scrollLeft = originalContentWidth;
+                }
+
+                // Apply visual transforms in every frame to ensure smooth updates
+                applyVisualTransforms();
+
+                // Request the next animation frame if any animation is active
+                if (isDragging || currentVelocity !== 0 || hoverDirection !== 0) {
+                    animationFrameId = requestAnimationFrame(animateLoop);
+                } else {
+                    // Stop the loop if no animation is needed
+                    animationFrameId = null;
+                }
+            }
+
+            /**
+             * Function to start the main animation loop if it's not already running.
+             */
+            function startAnimationLoop() {
+                if (!animationFrameId) {
+                    animationFrameId = requestAnimationFrame(animateLoop);
+                }
+            }
+
+            // Event listener for mouse down (start of drag)
+            galleryContainer.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                galleryContainer.style.cursor = 'grabbing'; // Change cursor to grabbing
+                startX = e.pageX - galleryContainer.offsetLeft; // Get initial mouse X relative to container
+                scrollLeftStart = galleryGrid.scrollLeft; // Store initial scroll position
+                lastMouseX = e.pageX; // Store current mouse X for velocity calculation
+                lastTime = performance.now(); // Store current time for velocity calculation
+                currentVelocity = 0; // Reset inertia velocity on new drag
+                hoverDirection = 0; // Stop hover scroll when dragging starts
+                startAnimationLoop(); // Ensure animation loop is running
+                e.preventDefault(); // Prevent default browser drag behavior
+            });
+
+            // Event listener for mouse leave (stop drag if mouse leaves container, or stop hover scroll)
+            galleryContainer.addEventListener('mouseleave', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    galleryContainer.style.cursor = 'grab'; // Change cursor back to grab
+                }
+                hoverDirection = 0; // Stop hover scroll
+            });
+
+            // Event listener for mouse up (end of drag)
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    galleryContainer.style.cursor = 'grab'; // Change cursor back to grab
+                }
+            });
+
+            // Event listener for mouse move (during drag or for hover scrolling)
+            document.addEventListener('mousemove', (e) => {
+                const currentTime = performance.now();
+                const currentMouseX = e.pageX;
+
+                if (isDragging) {
+                    e.preventDefault(); // Prevent default browser drag behavior
+
+                    const deltaX = currentMouseX - lastMouseX; // Change in mouse X
+                    const deltaTime = currentTime - lastTime; // Time elapsed
+
+                    if (deltaTime > 0) { // Avoid division by zero
+                        currentVelocity = deltaX / deltaTime; // Calculate velocity
+                    } else {
+                        currentVelocity = 0;
+                    }
+
+                    const x = currentMouseX - galleryContainer.offsetLeft;
+                    const walk = (x - startX); // Distance dragged
+
+                    galleryGrid.scrollLeft = scrollLeftStart - walk; // Update scroll position
+
+                    lastMouseX = currentMouseX;
+                    lastTime = currentTime;
+                    startAnimationLoop(); // Keep loop running during drag
+                } else {
+                    // Not dragging, check for hover scrolling
+                    const rect = galleryContainer.getBoundingClientRect();
+                    const x = e.clientX - rect.left; // Mouse X relative to container
+
+                    // Define hover zones (20% from each side)
+                    const hoverZoneWidth = rect.width * 0.2;
+
+                    if (x < hoverZoneWidth) {
+                        hoverDirection = -1; // Scroll left
+                        startAnimationLoop();
+                    } else if (x > rect.width - hoverZoneWidth) {
+                        hoverDirection = 1; // Scroll right
+                        startAnimationLoop();
+                    } else {
+                        hoverDirection = 0; // Stop hover scroll if not in a zone
+                    }
+                }
+            });
+
+            // Add touch event listeners for mobile compatibility
+            let touchStartX = 0; // Initial touch X position
+            let touchScrollLeftStart = 0; // Initial scroll position on touch start
+            let touchLastX = 0; // Last touch X position for velocity calculation
+            let touchLastTime = 0; // Last touch time for velocity calculation
+            let touchVelocity = 0; // Separate velocity for touch inertia
+
+            galleryContainer.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                touchStartX = e.touches[0].pageX - galleryContainer.offsetLeft;
+                touchScrollLeftStart = galleryGrid.scrollLeft;
+                touchLastX = e.touches[0].pageX;
+                touchLastTime = performance.now();
+                currentVelocity = 0; // Reset mouse inertia
+                touchVelocity = 0; // Reset touch inertia
+                hoverDirection = 0; // Stop hover scroll
+                startAnimationLoop(); // Ensure animation loop is running
+                e.preventDefault(); // Prevent default browser scrolling
+            }, { passive: false }); // Use passive: false to allow preventDefault
+
+            galleryContainer.addEventListener('touchend', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    currentVelocity = touchVelocity; // Transfer touch velocity to main velocity for inertia
+                }
+            });
+
+            galleryContainer.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault(); // Prevent default browser scrolling
+
+                const currentTime = performance.now();
+                const currentTouchX = e.touches[0].pageX;
+
+                const deltaX = currentTouchX - touchLastX;
+                const deltaTime = currentTime - touchLastTime;
+
+                if (deltaTime > 0) {
+                    touchVelocity = deltaX / deltaTime; // Calculate touch velocity
+                } else {
+                    touchVelocity = 0;
+                }
+
+                const x = currentTouchX - galleryContainer.offsetLeft;
+                const walk = (x - touchStartX);
+
+                galleryGrid.scrollLeft = touchScrollLeftStart - walk;
+
+                touchLastX = currentTouchX;
+                touchLastTime = currentTime;
+                startAnimationLoop(); // Keep loop running during touch drag
+            }, { passive: false }); // Use passive: false to allow preventDefault
+
+            /**
+             * Debounce function to limit how often a function is called.
+             * Useful for resize events to prevent excessive recalculations.
+             * @param {Function} func - The function to debounce.
+             * @param {number} delay - The delay in milliseconds.
+             * @returns {Function} The debounced function.
+             */
+            function debounce(func, delay) {
+                let timeout;
+                return function() {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(context, args), delay);
+                };
+            }
+
+            // Recalculate and apply transforms on window resize, debounced for performance
+            window.addEventListener('resize', debounce(calculateAndApplyTransforms, 200));
+
+            // Initial setup on page load
+            calculateAndApplyTransforms(); // Calculate dimensions and apply initial transforms
+            startAnimationLoop(); // Start the animation loop for initial visual effects
+
+
+            // New Navigation Bar Scroll and Hover Logic
+            const navBar = document.querySelector('nav');
+            let lastScrollY = window.scrollY; // Track last scroll position
+            const scrollThreshold = 100; // Pixels to scroll before hiding/showing nav
+            const hoverRevealZone = 50; // Pixels from top of viewport to reveal nav on hover
+
+            /**
+             * Handles scroll events to hide/show the navigation bar.
+             */
+            function handleScroll() {
+                const currentScrollY = window.scrollY;
+
+                if (currentScrollY > lastScrollY && currentScrollY > scrollThreshold) {
+                    // Scrolling down and past threshold, hide nav
+                    navBar.classList.add('nav-hidden');
+                } else if (currentScrollY < lastScrollY) {
+                    // Scrolling up, show nav
+                    navBar.classList.remove('nav-hidden');
+                }
+                lastScrollY = currentScrollY;
+            }
+
+            /**
+             * Handles mousemove events to reveal the navigation bar on hover near the top.
+             * @param {MouseEvent} event - The mouse event object.
+             */
+            function handleMouseMoveForNav(event) {
+                // If the nav is hidden and mouse is in the top reveal zone, show it
+                if (navBar.classList.contains('nav-hidden') && event.clientY < hoverRevealZone) {
+                    navBar.classList.remove('nav-hidden');
+                }
+            }
+
+            /**
+             * Handles mouseleave event from the document to hide the nav if it was revealed by hover
+             * and the user is scrolled down.
+             */
+            function handleMouseLeaveForNav() {
+                // If the nav is not at the very top of the page and it's not currently being scrolled up,
+                // hide it again after mouse leaves the hover zone.
+                // This prevents the nav from staying visible if it was only revealed by hover.
+                if (window.scrollY > scrollThreshold && !navBar.classList.contains('nav-hidden')) {
+                     // Add a small delay to allow for slight mouse movements without immediate re-hiding
+                    setTimeout(() => {
+                         // Re-check scroll position to ensure user hasn't scrolled up in the meantime
+                        if (window.scrollY > scrollThreshold) {
+                            navBar.classList.add('nav-hidden');
+                        }
+                    }, 300); // 300ms delay
+                }
+            }
+
+
+            // Attach scroll and mousemove listeners for navigation bar behavior
+            window.addEventListener('scroll', handleScroll);
+            document.addEventListener('mousemove', handleMouseMoveForNav);
+            document.addEventListener('mouseleave', handleMouseLeaveForNav); // To hide nav if mouse leaves window
+        });
+    </script>
+</body>
+</html>
