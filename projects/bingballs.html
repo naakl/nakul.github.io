@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Glowing Fidget Balls with Anti-Gravity</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      overflow: hidden;
+      background: #111;
+      touch-action: none;
+      user-select: none;
+      height: 100%;
+      width: 100%;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background: #111;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+(() => {
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  function resize() {
+    canvas.width = window.innerWidth * devicePixelRatio;
+    canvas.height = window.innerHeight * devicePixelRatio;
+    canvas.style.width = window.innerWidth + "px";
+    canvas.style.height = window.innerHeight + "px";
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  let gravity = 0.4;
+  const bounce = 0.9;
+  const friction = 0.98;
+  const balls = [];
+
+  // Predefined glowing colors
+  const colors = [
+    "255,0,0",   // red
+    "255,127,0", // orange
+    "255,255,0", // yellow
+    "0,255,0",   // green
+    "0,255,255", // cyan
+    "0,0,255",   // blue
+    "139,0,255"  // purple
+  ];
+
+  class Ball {
+    constructor(x, y, r) {
+      this.x = x;
+      this.y = y;
+      this.radius = r;
+      this.color = colors[Math.floor(Math.random() * colors.length)];
+      this.vx = (Math.random() - 0.5) * 8;
+      this.vy = (Math.random() - 0.5) * 8;
+      this.grabbed = false;
+      this.shrinkRate = 0.01;
+      this.rotation = Math.random() * Math.PI * 2;
+      this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+    }
+    draw() {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rotation);
+
+      // Outer glow - reduced glow here
+      const gradient = ctx.createRadialGradient(0, 0, this.radius * 0.4, 0, 0, this.radius);
+      gradient.addColorStop(0, `rgba(${this.color},0.5)`);       // less intense alpha
+      gradient.addColorStop(0.7, `rgba(${this.color},0.1)`);
+      gradient.addColorStop(1, "rgba(0,0,0,0)");
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner glow - reduced shadowBlur and alpha
+      ctx.fillStyle = `rgba(${this.color},0.6)`;
+      ctx.shadowColor = `rgba(${this.color},0.7)`;
+      ctx.shadowBlur = this.radius * 0.6;  // reduced from 0.9
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius * 1, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+    update() {
+      this.rotation += this.rotationSpeed;
+
+      if (!this.grabbed) {
+        this.vy += gravity;
+        this.vx *= friction;
+        this.vy *= friction;
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Bounce off walls
+        if (this.x + this.radius > canvas.width / devicePixelRatio) {
+          this.vx *= -bounce;
+          this.x = canvas.width / devicePixelRatio - this.radius;
+        }
+        if (this.x - this.radius < 0) {
+          this.vx *= -bounce;
+          this.x = this.radius;
+        }
+        if (this.y + this.radius > canvas.height / devicePixelRatio) {
+          this.vy *= -bounce;
+          this.y = canvas.height / devicePixelRatio - this.radius;
+        }
+        if (this.y - this.radius < 0) {
+          this.vy *= -bounce;
+          this.y = this.radius;
+        }
+
+        // Shrink gradually
+        this.radius -= this.shrinkRate;
+        if (this.radius < 8) {
+          const i = balls.indexOf(this);
+          if (i > -1) balls.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  function resolveCollision(b1, b2) {
+    const dx = b2.x - b1.x;
+    const dy = b2.y - b1.y;
+    const dist = Math.hypot(dx, dy);
+    const overlap = b1.radius + b2.radius - dist;
+    if (overlap > 0) {
+      const angle = Math.atan2(dy, dx);
+      const force = overlap / 2;
+      const fx = Math.cos(angle) * force;
+      const fy = Math.sin(angle) * force;
+
+      b1.x -= fx;
+      b1.y -= fy;
+      b2.x += fx;
+      b2.y += fy;
+
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const p = 2 * (b1.vx * nx + b1.vy * ny - b2.vx * nx - b2.vy * ny) / 2;
+
+      b1.vx -= p * nx;
+      b1.vy -= p * ny;
+      b2.vx += p * nx;
+      b2.vy += p * ny;
+    }
+  }
+
+  // Sound: simple beep on ball creation
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioContext();
+
+  function playCreationSound() {
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = "square";
+    osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+  }
+
+  // Sound for anti-gravity activation: whoosh sound
+  function playAntiGravitySound() {
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+  }
+
+  let pointer = {
+    x: 0,
+    y: 0,
+    down: false,
+    heldBall: null,
+    startTime: 0,
+  };
+
+  function getPointerPos(e) {
+    if (e.touches && e.touches.length) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else {
+      return { x: e.clientX, y: e.clientY };
+    }
+  }
+
+  function startInteraction(e) {
+    e.preventDefault();
+    pointer.down = true;
+    const pos = getPointerPos(e);
+    pointer.x = pos.x;
+    pointer.y = pos.y;
+    pointer.startTime = Date.now();
+
+    // Try grab a ball
+    for (let ball of balls) {
+      if (Math.hypot(pointer.x - ball.x, pointer.y - ball.y) < ball.radius) {
+        ball.grabbed = true;
+        pointer.heldBall = ball;
+        return;
+      }
+    }
+  }
+  function moveInteraction(e) {
+    e.preventDefault();
+    const pos = getPointerPos(e);
+    pointer.x = pos.x;
+    pointer.y = pos.y;
+  }
+  function endInteraction(e) {
+    e.preventDefault();
+    pointer.down = false;
+    if (pointer.heldBall) {
+      pointer.heldBall.grabbed = false;
+      pointer.heldBall.vx = (pointer.x - pointer.heldBall.x) * 0.3;
+      pointer.heldBall.vy = (pointer.y - pointer.heldBall.y) * 0.3;
+      pointer.heldBall = null;
+      return;
+    }
+    const holdTime = (Date.now() - pointer.startTime) / 1000;
+    const radius = Math.min(15 + holdTime * 100, 100);
+    balls.push(new Ball(pointer.x, pointer.y, radius));
+    playCreationSound();
+  }
+
+  canvas.addEventListener("mousedown", startInteraction);
+  canvas.addEventListener("mousemove", moveInteraction);
+  canvas.addEventListener("mouseup", endInteraction);
+  canvas.addEventListener("mouseleave", () => {
+    pointer.down = false;
+    if (pointer.heldBall) pointer.heldBall.grabbed = false;
+    pointer.heldBall = null;
+  });
+
+  canvas.addEventListener("touchstart", startInteraction, { passive: false });
+  canvas.addEventListener("touchmove", moveInteraction, { passive: false });
+  canvas.addEventListener("touchend", endInteraction, { passive: false });
+  canvas.addEventListener("touchcancel", endInteraction, { passive: false });
+
+  // Anti-gravity toggle variables
+  let antiGravityActive = false;
+  let antiGravityTimeout;
+
+  function toggleAntiGravity() {
+    if (antiGravityActive) return; // ignore if already active
+
+    antiGravityActive = true;
+    gravity = -0.4;
+    playAntiGravitySound();
+
+    antiGravityTimeout = setTimeout(() => {
+      gravity = 0.4;
+      antiGravityActive = false;
+    }, 10000);
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+      e.preventDefault();
+      toggleAntiGravity();
+    }
+  });
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw preview circle if holding down and not grabbing ball
+    if (pointer.down && !pointer.heldBall) {
+      const holdTime = (Date.now() - pointer.startTime) / 1000;
+      const previewRadius = Math.min(15 + holdTime * 100, 100);
+      ctx.beginPath();
+      ctx.arc(pointer.x, pointer.y, previewRadius, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,255,255,0.3)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    for (let i = 0; i < balls.length; i++) {
+      const ball = balls[i];
+      if (ball.grabbed) {
+        // Drag with easing
+        ball.x += (pointer.x - ball.x) * 0.2;
+        ball.y += (pointer.y - ball.y) * 0.2;
+      }
+      ball.update();
+      ball.draw();
+
+      // Check collisions with other balls
+      for (let j = i + 1; j < balls.length; j++) {
+        resolveCollision(ball, balls[j]);
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+</script>
+</body>
+</html>

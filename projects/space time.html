@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinate System Clock</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a1a1a; /* Dark background */
+            margin: 0;
+            padding: 20px; /* Add some padding around the content */
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #333333; /* Darker grey for the main container */
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5); /* Subtle shadow */
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 400px; /* Max width for better mobile display */
+        }
+        .header {
+            background-color: #666666; /* Light grey for header */
+            border-radius: 0.75rem; /* Rounded corners */
+            padding: 1.5rem;
+            color: #ffffff; /* White text */
+            font-size: 2.25rem; /* Large font size */
+            font-weight: 600; /* Semi-bold */
+            text-align: center;
+            line-height: 1.2;
+            display: none; /* Hide the header as requested */
+        }
+        .canvas-container {
+            background-color: #222222; /* Even darker grey for canvas background */
+            border-radius: 0.75rem; /* Rounded corners */
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative; /* For absolute positioning of labels */
+            overflow: hidden; /* Ensure nothing spills out */
+        }
+        canvas {
+            display: block;
+            width: 100%; /* Make canvas fill its container */
+            height: 300px; /* Fixed height for the canvas */
+        }
+        .minutes-left {
+            color: #ffffff;
+            font-size: 1.25rem;
+            text-align: center;
+            margin-top: 1rem;
+            background-color: #444444;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="text-xl">Space</div>
+            <div class="text-xl">Time</div>
+        </div>
+        <div class="canvas-container">
+            <canvas id="clockCanvas"></canvas>
+        </div>
+        <div id="minutesLeft" class="minutes-left"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('clockCanvas');
+        const ctx = canvas.getContext('2d');
+        const minutesLeftDisplay = document.getElementById('minutesLeft');
+
+        // Function to set canvas dimensions based on its container
+        function setCanvasDimensions() {
+            // Set canvas drawing buffer size to match its display size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+
+        function drawClock() {
+            setCanvasDimensions(); // Ensure canvas dimensions are updated on each draw
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Set origin for the coordinate system to be bottom-left of the drawable area
+            // We'll leave some padding for labels
+            const padding = 30;
+            const originX = padding;
+            const originY = canvas.height - padding;
+            const drawableWidth = canvas.width - 2 * padding;
+            const drawableHeight = canvas.height - 2 * padding;
+
+            // Get current time
+            const now = new Date();
+            let hours = now.getHours(); // Get hours in 24-hour format (0-23)
+            const minutes = now.getMinutes();
+
+            // Calculate minutes left till 24 hours
+            const totalMinutesInDay = 24 * 60;
+            const currentMinutesFromMidnight = hours * 60 + minutes;
+            const minutesRemaining = totalMinutesInDay - currentMinutesFromMidnight;
+            minutesLeftDisplay.textContent = `Minutes left till 24 hr: ${minutesRemaining}`;
+
+            // Convert hours to 12-hour format for display on the x-axis (0-11, where 0 represents 12 AM/PM)
+            let displayHours = hours % 12;
+            if (displayHours === 0) { // If it's 12 AM or 12 PM, hours becomes 0 for the modulo, so set to 12 for display
+                displayHours = 12;
+            }
+
+            // Define scales for x and y axes
+            // X-axis now goes from 0 to 12 (for 12 hours)
+            const xScale = drawableWidth / 12;
+            const yScale = drawableHeight / 60; // Y-axis goes from 0 to 60
+
+            // Calculate coordinates for the current time
+            // X-coordinate for hours (0-11, map 0 to 12 for display purposes on the axis)
+            const currentHourX = originX + displayHours * xScale;
+
+            // Y-coordinate for minutes (0-59 scaled to 0-60 on axis)
+            const currentMinuteY = originY - minutes * yScale;
+
+            // --- Draw Gradient Background with Clipping ---
+            ctx.save(); // Save the current drawing state
+
+            // Define the clipping path: a rectangle from (originX, currentMinuteY) to (currentHourX, originY)
+            ctx.beginPath();
+            ctx.rect(originX, currentMinuteY, currentHourX - originX, originY - currentMinuteY);
+            ctx.clip(); // Apply the clipping path
+
+            // Create a linear gradient from bottom to top of the *entire drawable area*
+            // The gradient's intensity will still be based on the full 60 minutes range.
+            const gradient = ctx.createLinearGradient(0, originY, 0, originY - drawableHeight);
+
+            // Calculate alpha based on current minutes (0 to 0.15 for very light red)
+            const redAlpha = (minutes / 60) * 0.15; // Max alpha 0.15 at 60 minutes
+
+            // Add color stops: transparent at the bottom, very light red at the current minute,
+            // and max very light red at the top (60 minutes).
+            gradient.addColorStop(0, 'rgba(255, 0, 0, 0)'); // Transparent at 0 minutes (bottom)
+            gradient.addColorStop(minutes / 60, `rgba(255, 0, 0, ${redAlpha})`); // Current minute's intensity
+            gradient.addColorStop(1, `rgba(255, 0, 0, 0.15)`); // Max intensity at 60 minutes (top)
+
+            ctx.fillStyle = gradient;
+            // Fill the entire drawable area, but only the clipped portion will be visible
+            ctx.fillRect(originX, originY - drawableHeight, drawableWidth, drawableHeight);
+
+            ctx.restore(); // Restore the canvas state, removing the clipping path for subsequent drawings
+
+
+            // --- Draw Axes and Labels ---
+
+            ctx.font = '12px Inter';
+            ctx.fillStyle = '#ffffff'; // White color for labels
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // X-axis (Hours)
+            ctx.strokeStyle = '#999999'; // Grey for axis lines
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(originX, originY);
+            ctx.lineTo(originX + drawableWidth, originY);
+            ctx.stroke();
+
+            // Draw x-axis labels (0 to 12, in increments of 1)
+            for (let i = 0; i <= 12; i++) {
+                const xPos = originX + i * xScale;
+                ctx.fillText(i.toString(), xPos, originY + 15); // Label below x-axis
+                ctx.beginPath();
+                ctx.moveTo(xPos, originY - 3); // Tick mark
+                ctx.lineTo(xPos, originY + 3);
+                ctx.stroke();
+            }
+            ctx.textAlign = 'right'; // Adjust for Y-axis labels
+            ctx.textBaseline = 'middle';
+
+            // Y-axis (Minutes)
+            ctx.beginPath();
+            ctx.moveTo(originX, originY);
+            ctx.lineTo(originX, originY - drawableHeight);
+            ctx.stroke();
+
+            for (let i = 0; i <= 60; i += 10) {
+                const yPos = originY - i * yScale;
+                ctx.fillText(i.toString(), originX - 15, yPos); // Label to the left of y-axis
+                ctx.beginPath();
+                ctx.moveTo(originX - 3, yPos); // Tick mark
+                ctx.lineTo(originX + 3, yPos);
+                ctx.stroke();
+            }
+
+            // --- Draw Current Time Representation ---
+
+            // Hour line (vertical)
+            ctx.strokeStyle = '#cccccc'; // Lighter grey for hands
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(currentHourX, originY);
+            ctx.lineTo(currentHourX, currentMinuteY);
+            ctx.stroke();
+
+            // Minute line (horizontal)
+            ctx.beginPath();
+            ctx.moveTo(originX, currentMinuteY);
+            ctx.lineTo(currentHourX, currentMinuteY);
+            ctx.stroke();
+
+            // Intersection point (red circle)
+            ctx.fillStyle = '#ff0000'; // Red color
+            ctx.beginPath();
+            ctx.arc(currentHourX, currentMinuteY, 5, 0, Math.PI * 2); // Red circle at intersection
+            ctx.fill();
+        }
+
+        // Initial draw
+        drawClock();
+
+        // Update clock every second
+        setInterval(drawClock, 1000);
+
+        // Redraw on window resize
+        window.addEventListener('resize', drawClock);
+    </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moon Lander Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #000;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    #gameCanvas {
+      display: block;
+      margin: 0 auto;
+      background-color: black;
+    }
+    .info {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 18px;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="info">
+    <p id="velocityX">Velocity X: 0</p>
+    <p id="velocityY">Velocity Y: 0</p>
+    <p id="altitude">Altitude: 0</p>
+    <p id="throttle">Throttle: 0%</p>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const GRAVITY = 0.05;
+    const FUEL_CONSUMPTION = 0.1;
+    const GROUND_HEIGHT = 40;
+
+    let throttle = 0; 
+    const MAX_THRUST = 0.2; // Reduced max thrust power to 1/10th
+    const THROTTLE_STEP = 5;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let lander = {
+      x: canvas.width / 2,
+      y: 100,
+      width: 40,
+      height: 40,
+      velocityX: 0,
+      velocityY: 0,
+      thrusting: false,
+      angle: 0,
+      rotationSpeed: 0.1
+    };
+
+    let fuel = 100;
+    let gameOver = false;
+
+    function drawGround() {
+      ctx.fillStyle = 'gray';
+      ctx.fillRect(0, canvas.height - GROUND_HEIGHT, canvas.width, GROUND_HEIGHT);
+    }
+
+    function drawThrusterEffects() {
+      if (lander.thrusting && fuel > 0) {
+        ctx.fillStyle = 'orange';
+        ctx.beginPath();
+        ctx.arc(lander.x + lander.width / 2, lander.y + lander.height, Math.random() * 10 + 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+        ctx.beginPath();
+        ctx.arc(lander.x + lander.width / 2 + (Math.random() * 10 - 5), lander.y + lander.height + 15, Math.random() * 8 + 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      const thrust = (throttle / 100) * MAX_THRUST;
+
+      lander.velocityY += GRAVITY;
+
+      if (lander.thrusting && fuel > 0) {
+        lander.velocityY -= thrust;
+        fuel -= FUEL_CONSUMPTION;
+      }
+
+      lander.x += lander.velocityX;
+      lander.y += lander.velocityY;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawGround();
+      drawThrusterEffects();
+
+      ctx.save();
+      ctx.translate(lander.x + lander.width / 2, lander.y + lander.height / 2);
+      ctx.rotate(lander.angle);
+      ctx.fillStyle = 'white';
+      ctx.fillRect(-lander.width / 2, -lander.height / 2, lander.width, lander.height);
+      ctx.restore();
+
+      ctx.fillStyle = 'green';
+      ctx.fillRect(10, 10, fuel * 2, 20);
+
+      document.getElementById('velocityX').innerText = `Velocity X: ${lander.velocityX.toFixed(2)}`;
+      document.getElementById('velocityY').innerText = `Velocity Y: ${lander.velocityY.toFixed(2)}`;
+      document.getElementById('altitude').innerText = `Altitude: ${(canvas.height - lander.y - GROUND_HEIGHT).toFixed(2)} m`;
+      document.getElementById('throttle').innerText = `Throttle: ${throttle.toFixed(0)}%`;
+
+      if (lander.y + lander.height >= canvas.height - GROUND_HEIGHT) {
+        if (Math.abs(lander.velocityY) > 3 || Math.abs(lander.velocityX) > 0.5) {
+          gameOver = true;
+          alert("Game Over!");
+        } else {
+          gameOver = true;
+          alert("Eagle has landed!");
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp') {
+        throttle = Math.min(throttle + THROTTLE_STEP, 100);
+        lander.thrusting = throttle > 0;
+      } else if (e.key === 'ArrowDown') {
+        throttle = Math.max(throttle - THROTTLE_STEP, 0);
+        lander.thrusting = throttle > 0;
+      } else if (e.key === 'ArrowLeft') {
+        lander.velocityX -= 0.5;
+        lander.angle -= lander.rotationSpeed;
+      } else if (e.key === 'ArrowRight') {
+        lander.velocityX += 0.5;
+        lander.angle += lander.rotationSpeed;
+      }
+    });
+
+    update();
+  </script>
+
+</body>
+</html>

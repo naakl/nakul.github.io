@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Voicefly</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: white;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 1.5em;
+      margin: 0.5em 0 0.2em;
+    }
+
+    p {
+      font-size: 1em;
+      margin: 0 0 0.5em;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #222;
+      border: 2px solid #0ff;
+      touch-action: none;
+      max-width: 100vw;
+      height: auto;
+    }
+
+    #score {
+      font-size: 1.2em;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Voice Flappybird</h1>
+  <p>Use your voice pitch to control.</p>
+  <div id="score">Score: 0 | High Score: 0</div>
+  <canvas id="game" width="800" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+
+    let audioCtx, analyser, source;
+    let buffer, stream;
+
+    let playerY, playerVY, pitchHistory, obstacles, frame, gameOver, score, highScore = 0;
+
+    function resetGame() {
+      playerY = canvas.height / 2;
+      playerVY = 0;
+      pitchHistory = [];
+      obstacles = [];
+      frame = 0;
+      score = 0;
+      gameOver = false;
+      scoreDisplay.innerText = `Score: 0 | High Score: ${highScore}`;
+      gameLoop();
+    }
+
+    function drawPlayer() {
+      ctx.beginPath();
+      ctx.arc(100, playerY, 15, 0, Math.PI * 2);
+      ctx.fillStyle = '#0ff';
+      ctx.fill();
+    }
+
+    function drawObstacles() {
+      ctx.fillStyle = '#f33';
+      for (const obs of obstacles) {
+        ctx.fillRect(obs.x, 0, obs.width, obs.gapY - obs.gapSize / 2);
+        ctx.fillRect(obs.x, obs.gapY + obs.gapSize / 2, obs.width, canvas.height);
+      }
+    }
+
+    function updateObstacles() {
+      if (frame % 90 === 0) {
+        const gapY = Math.random() * (canvas.height - 100) + 50;
+        obstacles.push({ x: canvas.width, width: 40, gapY, gapSize: 120 });
+      }
+
+      for (const obs of obstacles) {
+        obs.x -= 3;
+        if (
+          obs.x < 115 && obs.x + obs.width > 85 &&
+          (playerY < obs.gapY - obs.gapSize / 2 || playerY > obs.gapY + obs.gapSize / 2)
+        ) {
+          gameOver = true;
+        }
+      }
+
+      if (obstacles.length && obstacles[0].x < -50) {
+        obstacles.shift();
+      }
+    }
+
+    function gameLoop() {
+      if (gameOver) {
+        ctx.fillStyle = "white";
+        ctx.font = "40px sans-serif";
+        ctx.fillText("Game Over", canvas.width / 2 - 100, canvas.height / 2);
+        ctx.font = "20px sans-serif";
+        ctx.fillText("Press SPACE to restart", canvas.width / 2 - 100, canvas.height / 2 + 40);
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const smoothPitch = pitchHistory.length
+        ? pitchHistory.reduce((a, b) => a + b) / pitchHistory.length
+        : 300;
+
+      const clamped = Math.min(Math.max(smoothPitch, 150), 600);
+      const norm = (clamped - 150) / (600 - 150);
+      const lift = (0.5 - norm) * 2 * 2;
+
+      playerVY += 0.3 + lift;
+      playerVY *= 0.9;
+      playerY += playerVY;
+
+      if (playerY < 0 || playerY > canvas.height) gameOver = true;
+
+      drawPlayer();
+      drawObstacles();
+      updateObstacles();
+
+      if (!gameOver && frame % 5 === 0) {
+        score++;
+        if (score > highScore) highScore = score;
+        scoreDisplay.innerText = `Score: ${score} | High Score: ${highScore}`;
+      }
+
+      frame++;
+      requestAnimationFrame(gameLoop);
+    }
+
+    async function initAudio() {
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      source = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      buffer = new Float32Array(analyser.fftSize);
+      source.connect(analyser);
+      detectPitch();
+    }
+
+    function detectPitch() {
+      if (analyser) {
+        analyser.getFloatTimeDomainData(buffer);
+        let bestOffset = -1;
+        let bestCorrelation = 0;
+        const rms = Math.sqrt(buffer.reduce((sum, val) => sum + val * val, 0) / buffer.length);
+        if (rms > 0.01) {
+          for (let offset = 32; offset < 512; offset++) {
+            let correlation = 0;
+            for (let i = 0; i < buffer.length - offset; i++) {
+              correlation += buffer[i] * buffer[i + offset];
+            }
+            if (correlation > bestCorrelation) {
+              bestCorrelation = correlation;
+              bestOffset = offset;
+            }
+          }
+          if (bestOffset > -1) {
+            const detectedPitch = audioCtx.sampleRate / bestOffset;
+            pitchHistory.push(detectedPitch);
+            if (pitchHistory.length > 10) pitchHistory.shift();
+          }
+        }
+      }
+      requestAnimationFrame(detectPitch);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && gameOver) {
+        resetGame();
+      }
+    });
+
+    initAudio().then(resetGame);
+  </script>
+</body>
+</html>
